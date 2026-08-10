@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پروفایل</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --bg:#0f1220;
+    --card:#171b2e;
+    --card2:#1e2338;
+    --accent:#6c8cff;
+    --accent2:#38c9c0;
+    --text:#eef0fb;
+    --muted:#9aa1c2;
+    --border:#2a2f4a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Vazirmatn","Tahoma",sans-serif;
+    background:radial-gradient(1200px 600px at 20% -10%, #1c2140 0%, var(--bg) 60%);
+    color:var(--text);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .container{
+    max-width:640px;
+    margin:0 auto;
+    padding:0 16px;
+  }
+
+  /* هدر پروفایل */
+  .profile-hero{
+    text-align:center;
+    padding:44px 16px 24px;
+  }
+  .avatar{
+    width:150px;
+    height:150px;
+    border-radius:50%;
+    object-fit:cover;
+    border:4px solid var(--accent);
+    box-shadow:0 10px 40px rgba(108,140,255,.35);
+  }
+  .profile-hero h1{
+    margin:18px 0 4px;
+    font-size:26px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .profile-hero .subtitle{
+    color:var(--muted);
+    font-size:14px;
+    margin:0;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .card h2{
+    margin-top:0;
+    font-size:18px;
+  }
+  .card h2 .emoji{ margin-left:6px; }
+
+  .bio-text{
+    line-height:2;
+    color:#dbe0f7;
+    font-size:14.5px;
+    white-space:pre-line;
+  }
+
+  /* گالری عکس */
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    margin-top:14px;
+  }
+  .gallery img{
+    width:100%;
+    aspect-ratio:1/1;
+    object-fit:cover;
+    border-radius:12px;
+    border:1px solid var(--border);
+    cursor:pointer;
+    transition:transform .2s;
+  }
+  .gallery img:hover{ transform:scale(1.03); }
+
+  /* لایت‌باکس */
+  #lightbox{
+    position:fixed; inset:0;
+    background:rgba(5,6,15,.9);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1200;
+    padding:20px;
+  }
+  #lightbox.open{ display:flex; }
+  #lightbox img{
+    max-width:100%;
+    max-height:85vh;
+    border-radius:12px;
+  }
+  #lightbox-close{
+    position:absolute;
+    top:20px; left:20px;
+    background:var(--card2);
+    border:1px solid var(--border);
+    color:var(--text);
+    width:38px; height:38px;
+    border-radius:50%;
+    font-size:18px;
+    cursor:pointer;
+  }
+
+  /* لینک های تلگرام */
+  .tg-section{ text-align:center; }
+  .tg-links{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+  .tg-links a{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card2);
+    border:1px solid var(--border);
+    padding:12px 20px;
+    border-radius:12px;
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    transition:border-color .2s, transform .1s;
+  }
+  .tg-links a:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .tg-links svg{ width:20px; height:20px; fill:#29a9eb; }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    margin-top:30px;
+  }
+
+  /* آیکون شناور چت */
+  #chat-fab{
+    position:fixed;
+    bottom:22px;
+    left:22px;
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(108,140,255,.45);
+    z-index:1000;
+    border:none;
+    transition:transform .15s;
+  }
+  #chat-fab:hover{ transform:scale(1.06); }
+  #chat-fab svg{ width:28px; height:28px; fill:#0b0d1a; }
+  #chat-badge{
+    position:absolute;
+    top:-4px;
+    right:-4px;
+    background:#ff6b6b;
+    color:#fff;
+    font-size:11px;
+    font-weight:bold;
+    min-width:18px;
+    height:18px;
+    border-radius:9px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:0 4px;
+  }
+
+  /* پنجره چت */
+  #chat-panel{
+    position:fixed;
+    bottom:92px;
+    left:22px;
+    width:320px;
+    max-width:88vw;
+    height:440px;
+    max-height:70vh;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    display:none;
+    flex-direction:column;
+    overflow:hidden;
+    z-index:1000;
+  }
+  #chat-panel.open{ display:flex; }
+  .chat-head{
+    background:var(--card2);
+    padding:12px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid var(--border);
+  }
+  .chat-head b{font-size:14px;}
+  .online-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#3ddc84; display:inline-block; margin-left:6px;
+  }
+  #chat-close{
+    background:none; border:none; color:var(--muted);
+    font-size:18px; cursor:pointer; line-height:1;
+  }
+  #online-strip{
+    padding:8px 12px;
+    font-size:11px;
+    color:var(--muted);
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+    overflow-x:auto;
+  }
+  #chat-messages{
+    flex:1;
+    overflow-y:auto;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .bubble{
+    max-width:80%;
+    padding:8px 12px;
+    border-radius:12px;
+    font-size:13px;
+    background:var(--card2);
+    align-self:flex-start;
+    word-break:break-word;
+  }
+  .bubble.me{
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#0b0d1a;
+    align-self:flex-end;
+  }
+  .bubble .name{
+    font-size:11px;
+    color:var(--accent2);
+    display:block;
+    margin-bottom:2px;
+  }
+  .bubble.me .name{ color:#0b0d1a; opacity:.7; }
+  .bubble .time{
+    font-size:10px;
+    opacity:.6;
+    display:block;
+    margin-top:3px;
+  }
+  .chat-input-row{
+    display:flex;
+    gap:8px;
+    padding:10px;
+    border-top:1px solid var(--border);
+    background:var(--card2);
+  }
+  .chat-input-row input{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:9px 14px;
+    color:var(--text);
+    font-size:13px;
+    outline:none;
+  }
+  .chat-input-row button{
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    border:none;
+    border-radius:20px;
+    width:38px; height:38px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .chat-input-row button svg{ width:18px; height:18px; fill:#0b0d1a; transform:scaleX(-1); }
+  .empty-hint{ color:var(--muted); font-size:13px; text-align:center; padding:12px 0; }
+
+  #nick-modal{
+    position:fixed; inset:0;
+    background:rgba(5,6,15,.7);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1100;
+  }
+  #nick-modal.open{ display:flex; }
+  #nick-modal .box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    width:280px;
+    text-align:center;
+  }
+  #nick-modal input{
+    width:100%;
+    margin-top:12px;
+    background:var(--card2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 12px;
+    color:var(--text);
+    font-family:inherit;
+  }
+  #nick-modal .btn{
+    margin-top:14px;
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#0b0d1a;
+    font-weight:bold;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- هدر پروفایل -->
+  <div class="profile-hero">
+    <img class="avatar" src="images/18.jpg" alt="عکس پروفایل">
+    <h1>اصغر نقدی</h1>
+    <p class="subtitle">بهترین معلم عربی و پیام های آسمان تاریخ جهان</p>
+  </div>
+
+  <!-- بیوگرافی -->
+  <div class="card">
+    <h2><span class="emoji">📖</span>بیوگرافی</h2>
+    <p class="bio-text">اصغر نقدی زاده ۲۰۰۰ سال قبل از میلاد مسیح در کرمان چشم به جهان گشود. لقب وی پودر است و بچه‌های مدرسه علامه حلی شعبه ناحیه ۱ کرمان او را به این نام می‌شناسند.
+پروفسور نقدی در این مدرسه به تدریس درس عالی و بلند مرتبه عربی و درس پیام‌های آسمان می‌پردازد.
+تمامی دانش‌آموزان او از خدا درخواست ۱۲۰ سال عمر با عزت دارند و امیدوارند پروفسور نقدی هر جایی که هست سرافراز و با خوشحالی زندگی خود را سر کند.</p>
+  </div>
+
+  <!-- گالری عکس -->
+  <div class="card">
+    <h2><span class="emoji">🖼️</span>گالری عکس</h2>
+    <div class="gallery" id="gallery">
+      <img src="images/1.jpg" alt="عکس ۱">
+      <img src="images/2.jpg" alt="عکس ۲">
+      <img src="images/3.jpg" alt="عکس ۳">
+      <img src="images/4.jpg" alt="عکس ۴">
+      <img src="images/5.jpg" alt="عکس ۵">
+      <img src="images/6.jpg" alt="عکس ۶">
+      <img src="images/7.jpg" alt="عکس ۷">
+      <img src="images/8.jpg" alt="عکس ۸">
+      <img src="images/9.jpg" alt="عکس ۹">
+      <img src="images/10.jpg" alt="عکس ۱۰">
+      <img src="images/11.jpg" alt="عکس ۱۱">
+      <img src="images/12.jpg" alt="عکس ۱۲">
+      <img src="images/13.jpg" alt="عکس ۱۳">
+      <img src="images/14.jpg" alt="عکس ۱۴">
+      <img src="images/15.jpg" alt="عکس ۱۵">
+      <img src="images/16.png" alt="عکس ۱۶">
+      <img src="images/17.png" alt="عکس ۱۷">
+      <img src="images/18.jpg" alt="عکس ۱۸">
+      <img src="images/19.jpg" alt="عکس ۱۹">
+      <img src="images/20.jpg" alt="عکس ۲۰">
+    </div>
+  </div>
+
+  <!-- لینک های تلگرام -->
+  <div class="card tg-section">
+    <h2><span class="emoji">📢</span>عضویت در کانال و گروه</h2>
+    <div class="tg-links">
+      <a href="https://t.me/kingnaghdi" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M9.036 15.803l-.396 5.57c.568 0 .814-.244 1.11-.537l2.663-2.545 5.522 4.03c1.012.564 1.73.267 1.996-.935L23.94 3.5c.34-1.48-.535-2.06-1.52-1.69L1.116 9.914c-1.45.57-1.43 1.38-.248 1.75l5.443 1.7L19.9 5.28c.6-.394 1.15-.176.7.218" /></svg>
+        <span>کانال تلگرام</span>
+      </a>
+      <a href="https://t.me/+q7ZV_TLfuBRkMGQ0" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M9.036 15.803l-.396 5.57c.568 0 .814-.244 1.11-.537l2.663-2.545 5.522 4.03c1.012.564 1.73.267 1.996-.935L23.94 3.5c.34-1.48-.535-2.06-1.52-1.69L1.116 9.914c-1.45.57-1.43 1.38-.248 1.75l5.443 1.7L19.9 5.28c.6-.394 1.15-.176.7.218" /></svg>
+        <span>گروه تلگرام</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<footer>ساخته شده با ❤️</footer>
+
+<!-- لایت‌باکس نمایش بزرگ عکس -->
+<div id="lightbox">
+  <button id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- آیکون شناور چت -->
+<button id="chat-fab" title="چت آنلاین">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+  <span id="chat-badge">0</span>
+</button>
+
+<!-- پنجره چت -->
+<div id="chat-panel">
+  <div class="chat-head">
+    <b><span class="online-dot"></span>چت آنلاین <span id="online-count">(0)</span></b>
+    <button id="chat-close">✕</button>
+  </div>
+  <div id="online-strip">آنلاین: —</div>
+  <div id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="پیام خود را بنویسید...">
+    <button id="chat-send">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- مودال گرفتن نام کاربری برای چت -->
+<div id="nick-modal">
+  <div class="box">
+    <b>نام شما در چت</b>
+    <input type="text" id="nick-input" placeholder="مثلاً: علی">
+    <button class="btn" id="nick-confirm">ورود به چت</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- لایت‌باکس گالری ----------
+  const gallery = document.getElementById('gallery');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
+
+  gallery.addEventListener('click', (e)=>{
+    if(e.target.tagName === 'IMG'){
+      lightboxImg.src = e.target.src;
+      lightbox.classList.add('open');
+    }
+  });
+  lightboxClose.addEventListener('click', ()=> lightbox.classList.remove('open'));
+  lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) lightbox.classList.remove('open'); });
+
+  // ---------- تنظیمات Firebase ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyDCRJeWnBOc-glnEfZFUB2Hq0RPkp4q4AU",
+    authDomain: "naghdi-1efd6.firebaseapp.com",
+    databaseURL: "https://naghdi-1efd6-default-rtdb.firebaseio.com",
+    projectId: "naghdi-1efd6",
+    storageBucket: "naghdi-1efd6.firebasestorage.app",
+    messagingSenderId: "998067887427",
+    appId: "1:998067887427:web:6577f6035ba2111990e3f6"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const messagesRef = db.ref('chat-log');
+  const presenceRef = db.ref('chat-presence');
+
+  // ---------- چت آنلاین ----------
+  const fab = document.getElementById('chat-fab');
+  const chatPanel = document.getElementById('chat-panel');
+  const chatClose = document.getElementById('chat-close');
+  const chatMessages = document.getElementById('chat-messages');
+  const chatInput = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send');
+  const nickModal = document.getElementById('nick-modal');
+  const nickInput = document.getElementById('nick-input');
+  const nickConfirm = document.getElementById('nick-confirm');
+  const onlineStrip = document.getElementById('online-strip');
+  const onlineCount = document.getElementById('online-count');
+  const chatBadge = document.getElementById('chat-badge');
+
+  let myNick = sessionStorage.getItem('chat-nick') || '';
+  let chatOpen = false;
+  let unreadCount = 0;
+  let listenersAttached = false;
+
+  function escapeHtml(str){
+    return (str||'').replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  fab.addEventListener('click', ()=>{
+    if(!myNick){
+      nickModal.classList.add('open');
+      return;
+    }
+    openChat();
+  });
+
+  nickConfirm.addEventListener('click', ()=>{
+    const v = nickInput.value.trim();
+    if(!v) return;
+    myNick = v.slice(0,20);
+    sessionStorage.setItem('chat-nick', myNick);
+    nickModal.classList.remove('open');
+    openChat();
+  });
+  nickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') nickConfirm.click(); });
+
+  chatClose.addEventListener('click', closeChat);
+
+  function openChat(){
+    chatOpen = true;
+    chatPanel.classList.add('open');
+    chatBadge.style.display = 'none';
+    chatBadge.textContent = '0';
+    unreadCount = 0;
+
+    setPresence();
+
+    if(!listenersAttached){
+      attachMessageListener();
+      attachPresenceListener();
+      listenersAttached = true;
+    }
+    setTimeout(()=>{ chatMessages.scrollTop = chatMessages.scrollHeight; }, 200);
+  }
+
+  function closeChat(){
+    chatOpen = false;
+    chatPanel.classList.remove('open');
+  }
+
+  // حضور آنلاین: وقتی کاربر وصل میشه ثبت میشه و وقتی قطع بشه (بستن تب و ...) خودکار پاک میشه
+  function setPresence(){
+    if(!myNick) return;
+    const myPresenceRef = presenceRef.child(sanitizeKey(myNick));
+    myPresenceRef.set(firebase.database.ServerValue.TIMESTAMP);
+    myPresenceRef.onDisconnect().remove();
+  }
+
+  function sanitizeKey(str){
+    return str.replace(/[.#$\[\]\/]/g, '_');
+  }
+
+  function attachPresenceListener(){
+    presenceRef.on('value', (snapshot)=>{
+      const val = snapshot.val() || {};
+      const names = Object.keys(val);
+      onlineCount.textContent = '('+names.length+')';
+      onlineStrip.textContent = 'آنلاین: ' + (names.length ? names.join('، ') : '—');
+    });
+  }
+
+  function attachMessageListener(){
+    // فقط ۵۰ پیام آخر رو نگه می‌داریم و به‌صورت زنده گوش می‌دیم
+    messagesRef.limitToLast(50).on('value', (snapshot)=>{
+      const val = snapshot.val() || {};
+      const list = Object.keys(val).map(k=>val[k]).sort((a,b)=> (a.ts||0)-(b.ts||0));
+
+      if(!chatOpen){
+        unreadCount++;
+        chatBadge.style.display = 'flex';
+        chatBadge.textContent = Math.min(99, unreadCount);
+      }
+      renderMessages(list);
+    });
+  }
+
+  function renderMessages(list){
+    chatMessages.innerHTML = '';
+    if(!list.length){
+      chatMessages.innerHTML = '<div class="empty-hint">هنوز پیامی ارسال نشده. اولین نفر باشید!</div>';
+      return;
+    }
+    list.forEach(m=>{
+      const div = document.createElement('div');
+      div.className = 'bubble' + (m.nickname === myNick ? ' me' : '');
+      const time = m.ts ? new Date(m.ts).toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'}) : '';
+      div.innerHTML = `<span class="name">${escapeHtml(m.nickname)}</span>${escapeHtml(m.text)}<span class="time">${time}</span>`;
+      chatMessages.appendChild(div);
+    });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function sendMessage(){
+    const text = chatInput.value.trim();
+    if(!text || !myNick) return;
+    chatInput.value = '';
+    messagesRef.push({
+      nickname: myNick,
+      text: text.slice(0,500),
+      ts: firebase.database.ServerValue.TIMESTAMP
+    }).catch(()=>{
+      alert('ارسال پیام با خطا مواجه شد. دوباره تلاش کنید.');
+    });
+  }
+
+  chatSend.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendMessage(); });
+
+  // اگه کاربر تب رو ببنده، حضورش پاک بشه (پشتیبان اضافه برای onDisconnect)
+  window.addEventListener('beforeunload', ()=>{
+    if(myNick) presenceRef.child(sanitizeKey(myNick)).remove();
+  });
+})();
+</script>
+
+</body>
+</html>
