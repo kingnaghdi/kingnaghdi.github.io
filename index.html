@@ -32,8 +32,6 @@
     margin:0 auto;
     padding:0 16px;
   }
-
-  /* هدر پروفایل */
   .profile-hero{
     text-align:center;
     padding:44px 16px 24px;
@@ -80,8 +78,6 @@
     font-size:14.5px;
     white-space:pre-line;
   }
-
-  /* گالری عکس */
   .gallery{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
@@ -99,7 +95,6 @@
   }
   .gallery img:hover{ transform:scale(1.03); }
 
-  /* لایت‌باکس */
   #lightbox{
     position:fixed; inset:0;
     background:rgba(5,6,15,.9);
@@ -127,7 +122,6 @@
     cursor:pointer;
   }
 
-  /* لینک های تلگرام */
   .tg-section{ text-align:center; }
   .tg-links{
     display:flex;
@@ -159,7 +153,6 @@
     margin-top:30px;
   }
 
-  /* آیکون شناور چت */
   #chat-fab{
     position:fixed;
     bottom:22px;
@@ -196,7 +189,6 @@
     padding:0 4px;
   }
 
-  /* پنجره چت */
   #chat-panel{
     position:fixed;
     bottom:92px;
@@ -413,7 +405,6 @@
 
 <div class="container">
 
-  <!-- هدر پروفایل -->
   <div class="profile-hero">
     <img class="avatar" src="images/18.jpg" alt="عکس پروفایل">
     <h1>اصغر نقدی</h1>
@@ -455,7 +446,6 @@
     </div>
   </div>
 
-  <!-- لینک های تلگرام -->
   <div class="card tg-section">
     <h2><span class="emoji">📢</span>عضویت در کانال و گروه</h2>
     <div class="tg-links">
@@ -474,19 +464,16 @@
 
 <footer>ساخته شده با ❤️</footer>
 
-<!-- لایت‌باکس نمایش بزرگ عکس -->
 <div id="lightbox">
   <button id="lightbox-close">✕</button>
   <img id="lightbox-img" src="" alt="">
 </div>
 
-<!-- آیکون شناور چت -->
 <button id="chat-fab" title="چت آنلاین">
   <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
   <span id="chat-badge">0</span>
 </button>
 
-<!-- پنجره چت -->
 <div id="chat-panel">
   <div class="chat-head">
     <b><span class="online-dot"></span>چت آنلاین <span id="online-count">(0)</span></b>
@@ -509,7 +496,6 @@
   </div>
 </div>
 
-<!-- مودال گرفتن نام کاربری برای چت -->
 <div id="nick-modal">
   <div class="box">
     <b>نام شما در چت</b>
@@ -520,7 +506,7 @@
 
 <script>
 (function(){
-  // ---------- لایت‌باکس گالری ----------
+
   const gallery = document.getElementById('gallery');
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
@@ -535,7 +521,7 @@
   lightboxClose.addEventListener('click', ()=> lightbox.classList.remove('open'));
   lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) lightbox.classList.remove('open'); });
 
-  // ---------- تنظیمات Firebase ----------
+
   const firebaseConfig = {
     apiKey: "AIzaSyDCRJeWnBOc-glnEfZFUB2Hq0RPkp4q4AU",
     authDomain: "naghdi-1efd6.firebaseapp.com",
@@ -550,7 +536,7 @@
   const messagesRef = db.ref('chat-log');
   const presenceRef = db.ref('chat-presence');
 
-  // ---------- چت آنلاین ----------
+ 
   const fab = document.getElementById('chat-fab');
   const chatPanel = document.getElementById('chat-panel');
   const chatClose = document.getElementById('chat-close');
@@ -560,7 +546,7 @@
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiPanel = document.getElementById('emoji-panel');
 
-  // ---------- ایموجی ----------
+  
   const emojiList = [
     '😀','😁','😂','🤣','😊','😍','😘','😜','🤩','🥳',
     '😎','🤗','🤔','😴','😢','😭','😡','😱','🥺','😇',
@@ -648,7 +634,6 @@
     chatPanel.classList.remove('open');
   }
 
-  // حضور آنلاین: وقتی کاربر وصل میشه ثبت میشه و وقتی قطع بشه (بستن تب و ...) خودکار پاک میشه
   function setPresence(){
     if(!myNick) return;
     const myPresenceRef = presenceRef.child(sanitizeKey(myNick));
@@ -670,7 +655,7 @@
   }
 
   function attachMessageListener(){
-    // فقط ۵۰ پیام آخر رو نگه می‌داریم و به‌صورت زنده گوش می‌دیم
+  
     messagesRef.limitToLast(50).on('value', (snapshot)=>{
       const val = snapshot.val() || {};
       const list = Object.keys(val).map(k=>val[k]).sort((a,b)=> (a.ts||0)-(b.ts||0));
@@ -726,7 +711,7 @@
   chatSend.addEventListener('click', sendMessage);
   chatInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendMessage(); });
 
-  // ---------- ارسال عکس در چت ----------
+  
   const imgBtn = document.getElementById('img-btn');
   const imgInput = document.getElementById('img-input');
   const imgHint = document.getElementById('img-sending-hint');
@@ -760,7 +745,7 @@
     });
   });
 
-  // تغییر اندازه و فشرده‌سازی عکس قبل از ارسال (برای جا شدن در دیتابیس)
+  
   function compressImage(file, maxWidth, quality){
     return new Promise((resolve, reject)=>{
       const reader = new FileReader();
@@ -786,7 +771,6 @@
     });
   }
 
-  // اگه کاربر تب رو ببنده، حضورش پاک بشه (پشتیبان اضافه برای onDisconnect)
   window.addEventListener('beforeunload', ()=>{
     if(myNick) presenceRef.child(sanitizeKey(myNick)).remove();
   });
